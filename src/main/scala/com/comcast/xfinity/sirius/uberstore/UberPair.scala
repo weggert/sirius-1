@@ -58,7 +58,7 @@ object UberPair {
       case Some(seq) => (false, index.getOffsetFor(seq).get) // has to exist
     }
 
-    dataFile.foldLeftRange(lastOffset, Long.MaxValue)(includeFirst) (
+    dataFile.foldLeftRange(lastOffset, Long.MaxValue, readOnly=false)(includeFirst) (
       (shouldInclude, off, evt) => {
         if (shouldInclude) {
           index.put(evt.sequence, off)
@@ -105,7 +105,7 @@ class UberPair(dataFile: UberDataFile, index: SeqIndex) {
 
   def foldLeftRange[T](startSeq: Long, endSeq: Long)(acc0: T)(foldFun: (T, OrderedEvent) => T): T = {
     val (startOffset, endOffset) = index.getOffsetRange(startSeq, endSeq)
-    dataFile.foldLeftRange(startOffset, endOffset)(acc0)(
+    dataFile.foldLeftRange(startOffset, endOffset, readOnly=false)(acc0)(
       (acc, _, evt) => foldFun(acc, evt)
     )
   }

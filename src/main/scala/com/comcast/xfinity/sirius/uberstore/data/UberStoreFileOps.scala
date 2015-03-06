@@ -16,6 +16,7 @@
 package com.comcast.xfinity.sirius.uberstore.data
 
 import java.io.RandomAccessFile
+import java.nio.ByteBuffer
 
 /**
  * Trait providing low level File operations for an UberStore
@@ -42,10 +43,10 @@ trait UberStoreFileOps {
    * Has the side effect of advancing readHandle to the end of
    * the written data
    *
-   * @param readHandle the RandomAccessFile to read from, at the
+   * @param fileSource the UberFileSource to read from, at the
    *          current offset
    *
    * @return Some(bytes) or None if EOF encountered
    */
-  def readNext(readHandle: RandomAccessFile): Option[Array[Byte]]
+  def readNext(fileSource: UberFileSource): Option[ByteBuffer]
 }

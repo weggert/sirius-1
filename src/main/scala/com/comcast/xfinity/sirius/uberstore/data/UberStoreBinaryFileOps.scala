@@ -50,15 +50,15 @@ class UberStoreBinaryFileOps extends UberStoreFileOps {
   /**
    * @inheritdoc
    */
-  def readNext(readHandle: RandomAccessFile): Option[Array[Byte]] = {
-    val offset = readHandle.getFilePointer
+  def readNext(fileSource: UberFileSource): Option[Array[Byte]] = {
+    val offset = fileSource.getFilePointer
 
-    if (offset == readHandle.length) { // EOF
+    if (offset == fileSource.length) { // EOF
       None
     } else {
-      val (entryLen, chksum) = readHeader(readHandle)
+      val (entryLen, chksum) = readHeader(fileSource)
 
-      val body = readBody(readHandle, entryLen)
+      val body = readBody(fileSource, entryLen)
       if (chksum == checksum(body)) {
         Some(body) // [that i used to know | to love]
       } else {
@@ -69,17 +69,15 @@ class UberStoreBinaryFileOps extends UberStoreFileOps {
 
 
   // Helper jawns
-  private def readHeader(readHandle: RandomAccessFile): (Int,  Long) = {
-    val entryHeaderBuf = ByteBuffer.allocate(HEADER_SIZE)
-    readHandle.readFully(entryHeaderBuf.array)
+  private def readHeader(fileSource: UberFileSource): (Int, Long) = {
+    val entryHeaderBuf = fileSource.readBuffer(HEADER_SIZE)
 
-    (entryHeaderBuf.getInt(), entryHeaderBuf.getLong())
+    (entryHeaderBuf.getInt, entryHeaderBuf.getLong)
   }
 
-  private def readBody(readHandle: RandomAccessFile, bodyLen: Int): Array[Byte] = {
-    val entryBuf = ByteBuffer.allocate(bodyLen)
-    readHandle.readFully(entryBuf.array)
-
-    entryBuf.array
+  private def readBody(fileSource: UberFileSource, bodyLen: Int): Array[Byte] = {
+    val entryBuf = new Array[Byte](bodyLen)
+    fileSource.read(entryBuf)
+    entryBuf
   }
 }

@@ -74,7 +74,7 @@ object Segment {
       case Some(seq) => (false, index.getOffsetFor(seq).get) // has to exist
     }
 
-    dataFile.foldLeftRange(lastOffset, Long.MaxValue)(includeFirst) (
+    dataFile.foldLeftRange(lastOffset, Long.MaxValue, readOnly=false)(includeFirst) (
       (shouldInclude, off, evt) => {
         if (shouldInclude) {
           index.put(evt.sequence, off)
@@ -153,9 +153,9 @@ class Segment private[uberstore](val location: File, val name: String, dataFile:
   /**
    * Fold left over a range of entries based on sequence number.
    */
-  def foldLeftRange[T](startSeq: Long, endSeq: Long)(acc0: T)(foldFun: (T, OrderedEvent) => T): T = {
+  def foldLeftRange[T](startSeq: Long, endSeq: Long, readOnly: Boolean=false)(acc0: T)(foldFun: (T, OrderedEvent) => T): T = {
     val (startOffset, endOffset) = index.getOffsetRange(startSeq, endSeq)
-    dataFile.foldLeftRange(startOffset, endOffset)(acc0)(
+    dataFile.foldLeftRange(startOffset, endOffset, readOnly)(acc0)(
       (acc, _, evt) => foldFun(acc, evt)
     )
   }
