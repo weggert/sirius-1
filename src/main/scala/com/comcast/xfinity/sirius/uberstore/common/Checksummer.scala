@@ -15,6 +15,8 @@
  */
 package com.comcast.xfinity.sirius.uberstore.common
 
+import java.nio.ByteBuffer
+
 /**
  * Trait supplying checksumming capabilities
  */
@@ -29,4 +31,5 @@ trait Checksummer {
    * @return the checksum as a Long
    */
   def checksum(bytes: Array[Byte]): Long
+  def cachedChecksum(fileByteBuffer: ByteBuffer, len: Int): Long
 }

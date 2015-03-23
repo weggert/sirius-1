@@ -16,6 +16,8 @@
 package com.comcast.xfinity.sirius.uberstore.data
 
 import java.io.RandomAccessFile
+import java.nio.ByteBuffer
+import java.nio.channels.FileChannel
 import com.comcast.xfinity.sirius.api.impl.OrderedEvent
 import annotation.tailrec
 import com.comcast.xfinity.sirius.uberstore.common.Fnv1aChecksummer
@@ -111,7 +113,15 @@ private[uberstore] class UberDataFile(uberFileDesc: UberDataFile.UberFileDesc,
    * @param foldFun fold function
    */
   def foldLeft[T](acc0: T)(foldFun: (T, Long, OrderedEvent) => T): T = {
-    foldLeftRange(0, Long.MaxValue)(acc0)(foldFun)
+    val readHandle = uberFileDesc.createReadHandle()
+    try {
+      val channel = readHandle.getChannel
+      val length = readHandle.length()
+      val fileByteBuffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, length)
+      cachedFoldLeftUntil(fileByteBuffer, length, acc0, foldFun)
+    } finally {
+      readHandle.close()
+    }
   }
 
   /**
@@ -154,6 +164,22 @@ private[uberstore] class UberDataFile(uberFileDesc: UberDataFile.UberFileDesc,
       }
     }
   }
+
+    // private low low low level fold left
+  @tailrec
+  private def cachedFoldLeftUntil[T](fileByteBuffer: ByteBuffer, maxOffset: Long, acc: T, foldFun: (T, Long, OrderedEvent) => T): T = {
+    if (fileByteBuffer.position() > maxOffset) {
+      acc
+    } else {
+      fileOps.cachedReadNext(fileByteBuffer) match {
+        case None => acc
+        case Some(bytes) =>
+          val accNew = foldFun(acc, 0, codec.cachedDeserialize(bytes))
+          cachedFoldLeftUntil(fileByteBuffer, maxOffset, accNew, foldFun)
+      }
+    }
+  }
+
 
   /**
    * Close open file handles.  Only touching writeHandle here, since readHandles are opened and then

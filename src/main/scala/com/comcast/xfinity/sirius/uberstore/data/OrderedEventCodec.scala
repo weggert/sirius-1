@@ -15,6 +15,8 @@
  */
 package com.comcast.xfinity.sirius.uberstore.data
 
+import java.nio.ByteBuffer
+
 import com.comcast.xfinity.sirius.api.impl.OrderedEvent
 
 /**
@@ -41,4 +43,6 @@ trait OrderedEventCodec {
    * @return the OrderedEvent decoded from bytes
    */
   def deserialize(bytes: Array[Byte]): OrderedEvent
+
+  def cachedDeserialize(bytes: ByteBuffer): OrderedEvent
 }

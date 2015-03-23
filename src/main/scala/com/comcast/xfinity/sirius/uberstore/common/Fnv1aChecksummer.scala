@@ -16,6 +16,7 @@
 package com.comcast.xfinity.sirius.uberstore.common
 
 import java.lang.Object
+import java.nio.ByteBuffer
 
 object Fnv1aChecksummer {
 
@@ -45,6 +46,17 @@ trait Fnv1aChecksummer extends Checksummer {
 
     while (i < bytes.length) {
       hash = fnvPrime * (hash ^ (bytes(i) & 0x0ff))
+      i += 1
+    }
+
+    hash
+  }
+
+  def cachedChecksum(fileByteBuffer: ByteBuffer, len: Int): Long = {
+    var hash = fnvOffsetBasis
+    var i = 0
+    while (i < len) {
+      hash = fnvPrime * (hash ^ (fileByteBuffer.get() & 0x0ff))
       i += 1
     }
 

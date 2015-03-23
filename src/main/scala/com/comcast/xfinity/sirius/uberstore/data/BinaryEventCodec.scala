@@ -15,6 +15,8 @@
  */
 package com.comcast.xfinity.sirius.uberstore.data
 
+import java.util
+
 import com.comcast.xfinity.sirius.api.impl.{Delete, Put, OrderedEvent}
 import java.nio.ByteBuffer
 
@@ -65,11 +67,11 @@ class BinaryEventCodec extends OrderedEventCodec {
   def deserialize(bytes: Array[Byte]): OrderedEvent = {
     val eventBuf = ByteBuffer.wrap(bytes)
 
-    val seq = eventBuf.getLong()
-    val timestamp = eventBuf.getLong()
-    val typeCode = eventBuf.getInt()
-    val keyLen = eventBuf.getInt()
-    val bodyLen = eventBuf.getInt()
+    val seq = eventBuf.getLong
+    val timestamp = eventBuf.getLong
+    val typeCode = eventBuf.getInt
+    val keyLen = eventBuf.getInt
+    val bodyLen = eventBuf.getInt
 
     val keyBytes = new Array[Byte](keyLen)
     eventBuf.get(keyBytes)
@@ -82,6 +84,29 @@ class BinaryEventCodec extends OrderedEventCodec {
     OrderedEvent(seq, timestamp, req)
   }
 
+  def cachedDeserialize(fileByteBuffer: ByteBuffer): OrderedEvent = {
+    val seq = fileByteBuffer.getLong
+    val timestamp = fileByteBuffer.getLong
+    val typeCode = fileByteBuffer.getInt
+    val keyLen = fileByteBuffer.getInt
+    val bodyLen = fileByteBuffer.getInt
+
+    val keyBytes = new Array[Byte](keyLen)
+    fileByteBuffer.get(keyBytes)
+    val key = new String(keyBytes, "US-ASCII")
+
+    val req = typeCode match {
+      case PUT_CODE => createPut(fileByteBuffer, key, bodyLen)
+      case _ => Delete(key)
+    }
+    OrderedEvent(seq, timestamp, req)
+  }
+
+  private def createPut(fileByteBuffer: ByteBuffer, key: String, bodyLen: Int) = {
+    val buffer = new Array[Byte](bodyLen)
+    fileByteBuffer.get(buffer, 0, bodyLen)
+    Put(key, buffer)
+  }
 
   private def typeCodeFromOrderedEvent(event: OrderedEvent): Int = event.request match {
     case _: Put => PUT_CODE

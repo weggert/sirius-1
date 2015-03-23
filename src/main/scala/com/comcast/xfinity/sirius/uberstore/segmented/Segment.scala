@@ -158,9 +158,14 @@ class Segment private[uberstore](val location: File, val name: String, dataFile:
    */
   def foldLeftRange[T](startSeq: Long, endSeq: Long)(acc0: T)(foldFun: (T, OrderedEvent) => T): T = {
     val (startOffset, endOffset) = index.getOffsetRange(startSeq, endSeq)
-    dataFile.foldLeftRange(startOffset, endOffset)(acc0)(
-      (acc, _, evt) => foldFun(acc, evt)
-    )
+    endSeq match {
+      case Long.MaxValue => dataFile.foldLeft(acc0)(
+        (acc, _, evt) => foldFun(acc, evt)
+      )
+      case _  => dataFile.foldLeftRange(startOffset, endOffset)(acc0)(
+        (acc, _, evt) => foldFun(acc, evt)
+      )
+    }
   }
 
   /**
